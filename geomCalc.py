@@ -44,6 +44,9 @@ def validateSchema(name, schema):
 	and returns the set of paths in the schema and the graph.'''
 	if "Edges" not in schema.keys() or "Vertices" not in schema.keys():
 		raise ValueError(name + " is not a valid schema")
+	if (len(schema["Edges"].keys()) != len(set(schema["Edges"].keys())) 
+		or len(schema["Vertices"].keys()) != len(set(schema["Vertices"].keys()))):
+		raise ValueError(name + " is not a valid schema")
 	g = createGraph(schema)
 	return findPath(name, g), g
 

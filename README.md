@@ -69,6 +69,37 @@ Note that if your schema consists of one closed curve and some number of unclose
 
 The main package utilized is [networkx](https://networkx.github.io/documentation/latest/index.html). The simplicity and guarenteed efficiency was valued over a homebrewed graph implementation. Additionally, the implementation of Graham's convex hull algorithm, [here](https://gist.github.com/tixxit/242402), was used. Again, simplicity and efficiency of the implementation was prioritized.
 
+## Definition Of Schemas
+
+We consider Schemas of the form:
+```
+{
+    "Edges": [
+        id: {
+            "Type": "LineSegment",
+            "Vertices": [id],
+        },
+        id: {
+            "Type": "CircularArc",
+            "Center": {
+                "X": double,
+                "Y": double,
+            },
+            "ClockwiseFrom": id,
+            "Vertices": [id],
+        }
+    ],
+    "Vertices": [
+        id: {
+            "Position": {
+                "X": double,
+                "Y": double,
+            }
+        }
+    ]
+}
+```
+
 ## Potentially Dangerous Geometries
 
 It is not clear that smaller calipers may not be found, than those necessary to contain the `extended hulls`. For example, if a circular arc's chord was interior to an `initial hull`'s edge, but the top of the arc extruded beyond this edge, such that the chord and the hull's edge were not parallel, then it is possible that a different, smaller bounding box--than the obvious one calculated using sector height--may be possible to contain the arc. Roughly, one would need to find the point on the arc at the greatest distance from the hull's edge. This point can be found using planar geometry--in particular, for a certain domain of angles between the edge and the chord, this can be obtained by finding the point where the line perpendicular to the edge and intersecting the segment's midpoint, intersects the circular arc. This was not implemented in the final code due to the difficulty in determining the domain of angles and converting this observation to code. A prototypical implementation showed errors and was abandoned; however, given more time, could be rectified.
@@ -122,6 +153,6 @@ Note that these are primitive implementations not intended for production.
 
 In the future, I'd be curious to explore some more things:
 - Finding proof or explicit counterexample that extending the convex hull yields the minimum bounding box.
-- Improve my schema checking to try to catch more oddities from the outset, such as intersecting arcs.
+- Improve my schema checking to try to catch more oddities from the outset, such as intersecting edges, or missing data.
 - Clean up the rectangles function; both the structure and complexity.
 - Implement a function to optimize schemas with multiple curves.
