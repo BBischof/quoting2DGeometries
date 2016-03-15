@@ -141,20 +141,20 @@ def grahams_hull(points):
 	u = reduce(keep_left, reversed(points), [])
 	return l.extend(u[i] for i in xrange(1, len(u) - 1)) or l
 
-def computeInnerHull(schema, schema_graph):
+def computeInnerHull(schema, curve_path):
 	'''helper function to calculate an inital hull based on the points in a cycle'''
 	hull_points = []
 	hulls = []
-	for path in findPath(schema_graph):
+	for path in curve_path:
 		hull_points.append([pointLookup(h, schema) 
 			for h in grahams_hull([(schema["Vertices"][str(p)]["Position"]["X"], schema["Vertices"][str(p)]["Position"]["Y"]) 
 			for p in path])])
 	return hull_points
 
-def computeConvexHull(schema, schema_graph, values_dict):
+def computeConvexHull(schema, schema_graph, values_dict, curve_path):
 	'''Computes the convex hull by starting with an initial hull, and then expanding
 	if there are some extrusions to consider.'''
-	initial_hull = computeInnerHull(schema, schema_graph)
+	initial_hull = computeInnerHull(schema, curve_path)
 	final_hull = []
 	if len([e for e in schema["Edges"].keys() if schema["Edges"][e]["Type"] == "CircularArc"]) == 0:
 		for hull in initial_hull:
@@ -203,9 +203,9 @@ def findMinimumRectangle(hull):
 	return ((math.fabs(caliper_sizes[best_edge][1][0])/math.sqrt(caliper_sizes[best_edge][1][2])+PADDING)
 		*(math.fabs(caliper_sizes[best_edge][1][1])/math.sqrt(caliper_sizes[best_edge][1][2])+PADDING))
 
-def rotateCalipers(schema, schema_graph, values_dict):
+def rotateCalipers(schema, schema_graph, values_dict, curve_path):
 	'''Creates hulls, computes areas, and optimizes.'''
-	hulls = computeConvexHull(schema, schema_graph, values_dict)
+	hulls = computeConvexHull(schema, schema_graph, values_dict, curve_path)
 	price = 0.0
 	areas = []
 	for hull in hulls:
@@ -222,7 +222,7 @@ def main(schemas):
 				data = json.load(data_file)
 				path, graph = validateSchema(s, data)
 				values = computeValues(data)
-				print s, (costFormat(arcLength(data, values) + rotateCalipers(data, graph, values)))
+				print s, (costFormat(arcLength(data, values) + rotateCalipers(data, graph, values, path)))
 			except ValueError:
 				print s + " is not in valid JSON format."
 
