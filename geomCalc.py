@@ -31,7 +31,7 @@ def edgeLookup((x,y), schema):
 		if int(x) in schema["Edges"][s]["Vertices"]
 		and int(y) in schema["Edges"][s]["Vertices"]][0]
 
-def findPath(name, schema_graph):
+def findPath(schema_graph):
 	'''Determines if the schema contains a closed curve.'''
 	cycles = nx.cycle_basis(schema_graph)
 	if len(cycles) > 0:
@@ -48,9 +48,9 @@ def validateSchema(name, schema):
 		or len(schema["Vertices"].keys()) != len(set(schema["Vertices"].keys()))):
 		raise ValueError(name + " is not a valid schema")
 	g = createGraph(schema)
-	return findPath(name, g), g
+	return findPath(g), g
 
-def computeValues(name, schema): 
+def computeValues(schema): 
 	'''Stores the relevant values here to avoid multiple calculations.
 	Organized for readability.'''
 	values_dict = {}
@@ -141,20 +141,20 @@ def grahams_hull(points):
 	u = reduce(keep_left, reversed(points), [])
 	return l.extend(u[i] for i in xrange(1, len(u) - 1)) or l
 
-def computeInnerHull(name, schema, schema_graph):
+def computeInnerHull(schema, schema_graph):
 	'''helper function to calculate an inital hull based on the points in a cycle'''
 	hull_points = []
 	hulls = []
-	for path in findPath(name, schema_graph):
+	for path in findPath(schema_graph):
 		hull_points.append([pointLookup(h, schema) 
 			for h in grahams_hull([(schema["Vertices"][str(p)]["Position"]["X"], schema["Vertices"][str(p)]["Position"]["Y"]) 
 			for p in path])])
 	return hull_points
 
-def computeConvexHull(name, schema, schema_graph, values_dict):
+def computeConvexHull(schema, schema_graph, values_dict):
 	'''Computes the convex hull by starting with an initial hull, and then expanding
 	if there are some extrusions to consider.'''
-	initial_hull = computeInnerHull(name, schema, schema_graph)
+	initial_hull = computeInnerHull(schema, schema_graph)
 	final_hull = []
 	if len([e for e in schema["Edges"].keys() if schema["Edges"][e]["Type"] == "CircularArc"]) == 0:
 		for hull in initial_hull:
@@ -203,9 +203,9 @@ def findMinimumRectangle(hull):
 	return ((math.fabs(caliper_sizes[best_edge][1][0])/math.sqrt(caliper_sizes[best_edge][1][2])+PADDING)
 		*(math.fabs(caliper_sizes[best_edge][1][1])/math.sqrt(caliper_sizes[best_edge][1][2])+PADDING))
 
-def rotateCalipers(name, schema, schema_graph, values_dict):
+def rotateCalipers(schema, schema_graph, values_dict):
 	'''Creates hulls, computes areas, and optimizes.'''
-	hulls = computeConvexHull(name, schema, schema_graph, values_dict)
+	hulls = computeConvexHull(schema, schema_graph, values_dict)
 	price = 0.0
 	areas = []
 	for hull in hulls:
@@ -221,8 +221,8 @@ def main(schemas):
 			try:
 				data = json.load(data_file)
 				path, graph = validateSchema(s, data)
-				values = computeValues(s, data)
-				print s, (costFormat(arcLength(data, values) + rotateCalipers(s, data, graph, values)))
+				values = computeValues(data)
+				print s, (costFormat(arcLength(data, values) + rotateCalipers(data, graph, values)))
 			except ValueError:
 				print s + " is not in valid JSON format."
 
